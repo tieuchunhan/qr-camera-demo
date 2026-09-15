@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bẫy QR – Cú sốc nhận thức</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#061a35;color:#fff;min-height:100vh}
+.wrap{max-width:620px;margin:auto;padding:18px}
+.card{background:#fff;color:#111;border-radius:22px;padding:22px;box-shadow:0 15px 45px #0006}
+.badge{display:inline-block;background:#d71920;color:#fff;padding:7px 12px;border-radius:999px;font-weight:800;font-size:13px}
+h1{font-size:29px;line-height:1.1;margin:14px 0 10px;color:#092e62}
+h2{font-size:23px;color:#092e62}
+p{line-height:1.5}
+.warning{background:#fff4d6;border-left:5px solid #f0ad00;padding:12px 14px;border-radius:10px}
+video{width:100%;aspect-ratio:3/4;object-fit:cover;background:#000;border-radius:18px;margin-top:12px;display:none}
+.camera-box{position:relative}
+.count{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:110px;font-weight:900;text-shadow:0 3px 15px #000}
+button{border:0;border-radius:12px;padding:14px 18px;margin:7px 3px;font-weight:800;font-size:16px;cursor:pointer}
+.primary{background:#0867d8;color:#fff}.red{background:#d71920;color:#fff}.gray{background:#e8edf3;color:#111}
+button:disabled{opacity:.45;cursor:not-allowed}
+#result,#lesson{display:none}
+.result-img{width:100%;border-radius:18px}
+.lesson{background:#eef6ff;border-radius:16px;padding:15px}
+.tip{display:flex;gap:10px;margin:10px 0;align-items:flex-start}
+.icon{font-size:23px}
+.small{font-size:13px;color:#666}
+.footer{text-align:center;font-size:13px;color:#cbd8e8;margin:18px 5px}
+.shock{font-size:27px;font-weight:900;color:#d71920;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+
+<span class="badge">THỰC HÀNH TUYÊN TRUYỀN AN TOÀN SỐ</span>
+<h1>🔴 ĐỪNG VỘI TIN MỘT MÃ QR!</h1>
+<p>Đây là một <b>mô phỏng có kiểm soát</b>. Camera chỉ hoạt động sau khi bạn chủ động bấm <b>“Cho phép camera”</b>.</p>
+
+<div class="warning">
+<b>🎯 Mục tiêu:</b> giúp bạn nhận ra rằng việc cấp quyền cho một trang web có thể ảnh hưởng trực tiếp đến quyền riêng tư.
+</div>
+
+<div class="camera-box">
+<video id="video" autoplay playsinline></video>
+<div id="count" class="count"></div>
+</div>
+
+<div id="controls">
+<button id="start" class="primary">📷 CHO PHÉP CAMERA</button>
+<button id="shot" class="red" disabled>🤳 CHỤP ẢNH</button>
+</div>
+
+<p id="msg" class="small">Bạn chưa cấp quyền camera.</p>
+
+<div id="result">
+<img id="preview" class="result-img" alt="Ảnh xem trước">
+<p class="shock">⚠️ BẠN VỪA THẤY CHÍNH HÌNH ẢNH CỦA MÌNH!</p>
+<div class="lesson">
+<h2>Điều gì sẽ xảy ra nếu đây là một trang web xấu?</h2>
+<div class="tip"><span class="icon">📷</span><span>Camera có thể cho phép trang web nhìn thấy hình ảnh từ thiết bị.</span></div>
+<div class="tip"><span class="icon">👤</span><span>Ảnh cá nhân có thể trở thành dữ liệu cần được bảo vệ.</span></div>
+<div class="tip"><span class="icon">🔐</span><span>Không cấp quyền cho website khi chưa hiểu rõ mục đích.</span></div>
+<div class="tip"><span class="icon">📱</span><span>Hãy kiểm tra và thu hồi quyền camera trong cài đặt trình duyệt khi cần.</span></div>
+</div>
+<p><b>Nguyên tắc 3 KHÔNG:</b> Không vội quét – Không vội cấp quyền – Không vội chia sẻ.</p>
+<button id="again" class="gray">↩ THỰC HÀNH LẠI</button>
+<a id="save" download="anh-thuc-hanh-qr.jpg"><button class="primary">💾 LƯU ẢNH</button></a>
+</div>
+
+<canvas id="canvas" hidden></canvas>
+</div>
+<div class="footer">
+Tuyên truyền nhận thức • Không gửi ảnh lên máy chủ trong bản demo này<br>
+<span style="font-size:12px;opacity:.8">Thực hiện bởi Lan Phương - Công an phường B'Lao</span>
+</div>
+</div>
+
+<script>
+const video=document.getElementById('video');
+const canvas=document.getElementById('canvas');
+const start=document.getElementById('start');
+const shot=document.getElementById('shot');
+const count=document.getElementById('count');
+const result=document.getElementById('result');
+const preview=document.getElementById('preview');
+const save=document.getElementById('save');
+const msg=document.getElementById('msg');
+let stream=null;
+
+start.onclick=async()=>{
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    msg.textContent="Thiết bị/trình duyệt không hỗ trợ camera hoặc trang chưa chạy HTTPS.";
+    return;
+  }
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"user"}},
+      audio:false
+    });
+    video.srcObject=stream;
+    video.style.display="block";
+    shot.disabled=false;
+    start.textContent="✅ CAMERA ĐÃ ĐƯỢC CẤP QUYỀN";
+    msg.textContent="Camera trước đã sẵn sàng. Bấm “Chụp ảnh” để bắt đầu trải nghiệm.";
+  }catch(e){
+    msg.textContent="Bạn chưa cấp quyền camera. Nếu muốn thực hành, hãy cho phép camera khi trình duyệt hỏi.";
+  }
+};
+
+async function countdown(){
+  shot.disabled=true;
+  count.style.display="flex";
+  for(const n of ["3","2","1"]){
+    count.textContent=n;
+    await new Promise(r=>setTimeout(r,700));
+  }
+  count.textContent="📸";
+  await new Promise(r=>setTimeout(r,350));
+  count.style.display="none";
+
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.save();
+  ctx.translate(canvas.width,0);
+  ctx.scale(-1,1);
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  ctx.restore();
+
+  const data=canvas.toDataURL("image/jpeg",0.92);
+  preview.src=data;
+  save.href=data;
+  result.style.display="block";
+  shot.disabled=false;
+  msg.textContent="Đã chụp ảnh. Ảnh không được gửi đi trong bản demo này.";
+}
+
+shot.onclick=countdown;
+
+document.getElementById('again').onclick=()=>{
+  result.style.display="none";
+  msg.textContent="Camera vẫn đang hoạt động. Bạn có thể chụp lại.";
+};
+
+window.addEventListener('beforeunload',()=>{
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+});
+</script>
+</body>
+</html>
